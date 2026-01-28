@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proyecto Triángulo - APIs Gráficas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            color: #00ff88;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #aaa;
+            margin-bottom: 30px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .tab {
+            padding: 15px 30px;
+            background: #2a2a4e;
+            border: 2px solid #3a3a6e;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .tab:hover {
+            background: #3a3a6e;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .canvas-container {
+            background: #1a1a1a;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            margin-bottom: 30px;
+        }
+        
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border-radius: 10px;
+            border: 3px solid #333;
+        }
+        
+        .info {
+            background: rgba(42, 42, 78, 0.5);
+            border: 2px solid #3a3a6e;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .info h3 {
+            color: #00ff88;
+            margin-bottom: 10px;
+        }
+        
+        .info p {
+            line-height: 1.6;
+            color: #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔺 Proyecto de Gráficos por Computadora</h1>
+        <p class="subtitle">Triángulo Equilátero con WebGL 2, TWGL y Three.js</p>
+        
+        <div class="tabs">
+            <button class="tab active" data-impl="webgl2">WebGL 2</button>
+            <button class="tab" data-impl="twgl">TWGL</button>
+            <button class="tab" data-impl="threejs">Three.js</button>
+        </div>
+        
+        <div class="canvas-container">
+            <canvas id="canvas" width="800" height="600"></canvas>
+        </div>
+        
+        <div class="info">
+            <h3>Especificaciones del Proyecto</h3>
+            <p>
+                <strong>Colores:</strong> Rojo (#ff0000), Verde (#00ff00), Azul (#0000ff)<br>
+                <strong>Coordenadas:</strong> (-0.50, -0.50), (0.50, -0.50), (0.00, 0.87)<br>
+                <strong>Fondo:</strong> Oscuro pero no negro<br>
+                <strong>Degradado:</strong> Suave entre los vértices
+            </p>
+        </div>
+    </div>
+
+    <script type="module">
+        let currentImplementation = null;
+        
+        async function loadImplementation(impl) {
+            const canvas = document.getElementById('canvas');
+            
+            // Limpia la implementación anterior
+            if (currentImplementation && currentImplementation.cleanup) {
+                try {
+                    currentImplementation.cleanup();
+                } catch (e) {
+                    console.error('Cleanup error:', e);
+                }
+            }
+            
+            currentImplementation = null;
+            
+            // Limpia completamente el canvas recreando el contexto
+            const parent = canvas.parentNode;
+            const newCanvas = canvas.cloneNode(true);
+            parent.replaceChild(newCanvas, canvas);
+            
+            // Pequeña pausa
+            await new Promise(resolve => setTimeout(resolve, 50));
+            
+            try {
+                // Fuerza la recarga del módulo con timestamp único
+                const timestamp = Date.now();
+                const module = await import('./src/' + impl + '.ts?v=' + timestamp);
+                currentImplementation = module;
+                
+                if (module.init) {
+                    module.init();
+                }
+            } catch (error) {
+                console.error('Error loading ' + impl + ':', error);
+                alert('Error al cargar ' + impl + '. Revisa la consola.');
+            }
+        }
+        
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                loadImplementation(tab.dataset.impl);
+            });
+        });
+        
+        loadImplementation('webgl2');
+    </script>
+</body>
+</html>
